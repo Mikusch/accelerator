@@ -138,7 +138,7 @@ private:
 	class SourcePawnNotifyThread : public IThread
 	{
 	public:
-		SourcePawnNotifyThread(Accelerator* outter) : m_outter(outter), m_terminated(false), m_shutdown(false)
+		SourcePawnNotifyThread(Accelerator* outter) : m_outter(outter), m_terminated(false), m_shutdown(false) {}
 		~SourcePawnNotifyThread() { while (!m_terminated) {} }
 
 		void RunThread(IThreadHandle* pHandle) {
