@@ -27,7 +27,6 @@
 
 #include <IWebternet.h>
 #include "MemoryDownloader.h"
-#include "forwards.h"
 #include "natives.h"
 
 #if defined _LINUX
@@ -1085,25 +1084,6 @@ class UploadThread: public IThread
 	}
 } uploadThread;
 
-class SourcePawnNotifyThread : public IThread
-{
-public:
-
-	void RunThread(IThreadHandle* pHandle) {
-		for (;;) {
-			// Wait until OnMapStart is called once, this should be enough delay to make sure plugins are loaded.
-			if (g_accelerator.IsMapStarted() && g_accelerator.IsDoneUploading()) {
-				extforwards::CallOnDoneUploadingForward();
-				break;
-			}
-		}
-	}
-
-	void OnTerminate(IThreadHandle* pHandle, bool cancel) {
-	}
-
-} spNotifyThread;
-
 class VFuncEmptyClass {};
 
 const char *GetCmdLine()
@@ -1142,7 +1122,7 @@ const char *GetCmdLine()
 }
 
 Accelerator::Accelerator() :
-	m_doneuploading(false), m_maphasstarted(false)
+	m_doneuploading(false), m_maphasstarted(false), m_outter(this)
 {
 }
 
@@ -1171,8 +1151,8 @@ bool Accelerator::SDK_OnLoad(char *error, size_t maxlength, bool late)
 	strncpy(crashGameDirectory, g_pSM->GetGameFolderName(), sizeof(crashGameDirectory) - 1);
 
 	threader->MakeThread(&uploadThread);
-	threader->MakeThread(&spNotifyThread); // This thread waits for accelator to be done uploading and for the first OnMapStart call, then fires a SourceMod forward
-
+	threader->MakeThread(&m_spNotifyThread); // This thread waits for accelator to be done uploading and for the first OnMapStart call, then fires a SourceMod forward
+	
 	do {
 		char gameconfigError[256];
 		if (!gameconfs->LoadGameConfigFile("accelerator.games", &gameconfig, gameconfigError, sizeof(gameconfigError))) {
@@ -1353,6 +1333,7 @@ void Accelerator::SDK_OnUnload()
 {
 	extforwards::Shutdown();
 	plsys->RemovePluginsListener(this);
+	m_spNotifyThread.Shutdown();
 
 #if defined _LINUX
 	g_pSM->RemoveGameFrameHook(OnGameFrame);

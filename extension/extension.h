@@ -30,6 +30,7 @@
 #include <vector>
 #include <mutex>
 #include "smsdk_ext.h"
+#include "forwards.h"
 
 /**
  * @brief Represents a crash that has been successfully uploaded to Accelerator's backend
@@ -133,6 +134,35 @@ private:
 	mutable std::mutex m_uploadedcrashes_mutex; // mutex for accessing the m_uploadedcrashes vector
 	std::atomic_bool m_doneuploading; // Signals that Accelerator is done uploading crashes.
 	std::atomic_bool m_maphasstarted; // Signals that OnMapStart has been called at least once.
+
+	class SourcePawnNotifyThread : public IThread
+	{
+	public:
+		SourcePawnNotifyThread(Accelerator* outter) : m_outter(outter), m_terminated(false), m_shutdown(false)
+		~SourcePawnNotifyThread() { while (!m_terminated) {} }
+
+		void RunThread(IThreadHandle* pHandle) {
+			while (!m_shutdown) {
+				// Wait until OnMapStart is called once, this should be enough delay to make sure plugins are loaded.
+				if (m_outter.IsMapStarted() && m_outter.IsDoneUploading()) {
+					extforwards::CallOnDoneUploadingForward();
+					break;
+				}
+			}
+		}
+
+		void OnTerminate(IThreadHandle* pHandle, bool cancel) {
+			m_terminated = true;
+		}
+
+		void Shutdown() {
+			m_shutdown = true;
+		}
+
+		Accelerator* m_outter;
+		bool m_terminated;
+		bool m_shutdown;
+	} m_spNotifyThread;
 };
 
 // Expose the extension singleton.
