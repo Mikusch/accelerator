@@ -144,7 +144,7 @@ private:
 		void RunThread(IThreadHandle* pHandle) {
 			while (!m_shutdown) {
 				// Wait until OnMapStart is called once, this should be enough delay to make sure plugins are loaded.
-				if (m_outter.IsMapStarted() && m_outter.IsDoneUploading()) {
+				if (m_outter->IsMapStarted() && m_outter->IsDoneUploading()) {
 					extforwards::CallOnDoneUploadingForward();
 					break;
 				}
