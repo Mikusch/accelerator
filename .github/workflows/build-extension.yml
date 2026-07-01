@@ -82,7 +82,7 @@ jobs:
           ambuild
 
       - name: Build (Release)
-        if: not ${{ inputs.debug }}
+        if: ${{ !inputs.debug }}
         run: |
           mkdir -p build && cd build
           python ../configure.py --enable-optimize
