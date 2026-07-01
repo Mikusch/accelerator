@@ -21,20 +21,20 @@ jobs:
     steps:
       - run: sudo apt-get install -y tree
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         name: Repository checkout
         with:
           fetch-depth: 0
           path: repository
       
       - name: Download Linux release
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: accelerator_linux
           path: linux
 
       - name: Download Windows release
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: accelerator_windows
           path: windows

@@ -9,9 +9,6 @@ on:
         default: false
 
 jobs:
-  cache:
-    uses: ./.github/workflows/cache.yml
-
   build-options:
     runs-on: ubuntu-latest
     outputs:
@@ -23,7 +20,7 @@ jobs:
   
   build:
     name: Build
-    needs: [ cache, build-options ]
+    needs: [ build-options ]
 
     strategy:
       fail-fast: false
@@ -42,5 +39,3 @@ jobs:
       cxx: ${{ matrix.runners.cxx }}
       upload: ${{ matrix.runners.upload }}
       upload-artifact-name: ${{ matrix.runners.upload-artifact-name }}
-      cache-key: ${{ needs.cache.outputs.key }}
-      cache-dir: ${{ needs.cache.outputs.dir }}
