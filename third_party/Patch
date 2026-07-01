@@ -39,7 +39,8 @@ patches = AddFilesFromDir(os.path.join(builder.currentSourcePath, '..', 'patches
   "0003-Support-compilation-on-VS-2015.patch",
   "0004-Fix-Linux-a-out-include.patch",
   "0005-Add-LSS.patch",
-  "0006-Fix-multipart-missing-CRLF.patch"
+  "0006-Fix-multipart-missing-CRLF.patch",
+  "0007-Fix-checked_array_iterator-removed-in-modern-MSVC.patch"
 ])
 
 # Reset the breakpad directory before applying patches
