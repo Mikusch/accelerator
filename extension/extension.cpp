@@ -24,6 +24,7 @@
 #endif
 
 #include <sp_vm_api.h>
+#include <base-runtime.h>
 
 #include <IWebternet.h>
 #include "MemoryDownloader.h"
@@ -1234,43 +1235,6 @@ bool Accelerator::SDK_OnLoad(char *error, size_t maxlength, bool late)
 #error Bad platform.
 #endif
 
-	do {
-		char spJitPath[512];
-		g_pSM->BuildPath(Path_SM, spJitPath, sizeof(spJitPath), "bin/" PLATFORM_ARCH_FOLDER "sourcepawn.jit.x86." PLATFORM_LIB_EXT);
-
-		char spJitError[255];
-		std::unique_ptr<ILibrary> spJit(libsys->OpenLibrary(spJitPath, spJitError, sizeof(spJitError)));
-		if (!spJit) {
-			smutils->LogMessage(myself, "WARNING: Failed to load SourcePawn library %s: %s", spJitPath, spJitError);
-			break;
-		}
-
-		GetSourcePawnFactoryFn factoryFn = (GetSourcePawnFactoryFn)spJit->GetSymbolAddress("GetSourcePawnFactory");
-		if (!factoryFn) {
-			smutils->LogMessage(myself, "WARNING: SourcePawn library is out of date: No factory function.");
-			break;
-		}
-
-		ISourcePawnFactory *spFactory = factoryFn(0x0207);
-		if (!spFactory) {
-			smutils->LogMessage(myself, "WARNING: SourcePawn library is out of date: Failed to get version 2.7", 0x0207);
-			break;
-		}
-
-		ISourcePawnEnvironment *spEnvironment = spFactory->CurrentEnvironment();
-		if (!spEnvironment) {
-			smutils->LogMessage(myself, "WARNING: Could not get SourcePawn environment.");
-			break;
-		}
-
-		ISourcePawnEngine2 *spEngine2 = spEnvironment->APIv2();
-		if (!spEngine2) {
-			smutils->LogMessage(myself, "WARNING: Could not get SourcePawn engine2.");
-			break;
-		}
-
-		strncpy(crashSourceModVersion, spEngine2->GetVersionString(), sizeof(crashSourceModVersion));
-	} while(false);
 
 	plsys->AddPluginsListener(this);
 
@@ -1484,13 +1448,14 @@ void Accelerator::OnPluginLoaded(IPlugin *plugin)
 	size += sizeof(void *); // GetBaseContext
 	size += filenameSize;
 
-	uint32_t count = runtime->GetPublicsNum();
+	sp::BaseRuntime *baseRuntime = runtime->GetBaseRuntime();
+	uint32_t count = baseRuntime->GetPublicsNum();
 	size += sizeof(uint32_t); // count
 	size += count * sizeof(uint32_t); // pubinfo->code_offs
 
 	for (uint32_t i = 0; i < count; ++i) {
 		sp_public_t *pubinfo;
-		runtime->GetPublicByIndex(i, &pubinfo);
+		baseRuntime->GetPublicByIndex(i, &pubinfo);
 
 		size += strlen(pubinfo->name) + 1;
 	}
@@ -1512,7 +1477,7 @@ void Accelerator::OnPluginLoaded(IPlugin *plugin)
 
 	for (uint32_t i = 0; i < count; ++i) {
 		sp_public_t *pubinfo;
-		runtime->GetPublicByIndex(i, &pubinfo);
+		baseRuntime->GetPublicByIndex(i, &pubinfo);
 
 		memcpy(cursor, &pubinfo->code_offs, sizeof(uint32_t));
 		cursor += sizeof(uint32_t);
